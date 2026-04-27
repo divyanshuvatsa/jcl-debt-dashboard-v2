@@ -1,0 +1,342 @@
+"""
+Hardcoded data — single source of truth fallback.
+Mirrors the JCL_Debt_Model.xlsx exactly (verified against sanction letters).
+
+When an Excel file is uploaded, the loader prefers it; otherwise these
+constants drive the dashboard.
+"""
+
+from datetime import date
+
+# =============================================================================
+# FINANCIALS  (from Excel "Instructions & Assumptions" Section C)
+# =============================================================================
+FINANCIALS = {
+    "FY24A": {
+        "label":          "FY24A Actual",
+        "ebitda":         173.37,
+        "total_debt":     471.82,
+        "tnw":            720.11,
+        "interest_exp":   39.87,
+        "net_fixed_assets": 449.34,
+        "current_assets": 540.0,    # implied; refine when full BS available
+        "current_liab":   390.0,
+        "tax_paid":       35.0,
+    },
+    "FY26E": {
+        "label":          "FY26E Projected",
+        "ebitda":         383.96,
+        "total_debt":     613.03,
+        "tnw":            740.13,
+        "interest_exp":   49.08,
+        "net_fixed_assets": 937.69,
+        "current_assets": 700.0,
+        "current_liab":   505.0,
+        "tax_paid":       45.0,
+    },
+}
+
+# =============================================================================
+# BENCHMARK RATES (current Apr-2026 readings; user can override in sidebar)
+# =============================================================================
+BENCHMARK_RATES = {
+    "RBL_1Y_MCLR":  9.00,
+    "YBL_3M_MCLR":  9.00,
+    "ICICI_6M_IMCLR": 8.30,
+    "SIB_12M_MCLR": 9.75,
+    "T_BILL_3M":    5.18,
+    "REPO":         5.25,
+    "TERM_SOFR":    4.30,
+    "BFRR":         8.50,
+}
+
+# =============================================================================
+# LENDER UMBRELLA CAPS  (binding limits per sanction letter)
+# =============================================================================
+LENDER_CAPS = {
+    "RBL Bank":          {"cap": 300,    "note": "Overall excl. FD-backed"},
+    "YES Bank":          {"cap": 200,    "note": "WC cap net of receivable finance"},
+    "Bajaj Finance":     {"cap": 150,    "note": "Single facility"},
+    "ICICI Bank":        {"cap": 200,    "note": "Aggregate sanctioned exposure"},
+    "South Indian Bank": {"cap": 150,    "note": "LC + Capex LC combined"},
+}
+
+# =============================================================================
+# FACILITY MASTER  (34 facilities — ₹3,410.7 Cr total)
+# =============================================================================
+def get_facility_master():
+    """Return list of dicts representing the full facility master."""
+    return [
+        # ===== RBL Bank (15 facilities, ₹1,482 Cr gross / ₹300 Cr cap) =====
+        dict(sno=1,  lender="RBL Bank", facility="Letter of Credit - Main Limit",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.45, sanction_date=date(2025,12,31), maturity=date(2026,11,30),
+             rate_status="Confirmed", parent="Main"),
+        dict(sno=2,  lender="RBL Bank", facility="Bank Guarantee",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=25, outstanding=25, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.50, sanction_date=date(2025,12,31), maturity=date(2026,11,30),
+             rate_status="Estimate", parent="Sub-limit of LC"),
+        dict(sno=3,  lender="RBL Bank", facility="Invoice Discounting (PID)",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="TBD", benchmark="To be decided", spread=None,
+             eff_rate=9.05, sanction_date=date(2025,12,31), maturity=date(2026,11,30),
+             rate_status="Estimate (proxy: RBL CC)", parent="Standalone"),
+        dict(sno=4,  lender="RBL Bank", facility="SBLC",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.50, sanction_date=date(2025,3,13), maturity=date(2026,11,30),
+             rate_status="Confirmed", parent="Sub-limit of LC"),
+        dict(sno=5,  lender="RBL Bank", facility="Pre-Acceptance LCBD",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="TBD", benchmark="To be decided", spread=None,
+             eff_rate=9.05, sanction_date=date(2025,12,31), maturity=date(2026,11,30),
+             rate_status="Estimate (proxy: RBL CC)", parent="Standalone"),
+        dict(sno=6,  lender="RBL Bank", facility="Cash Credit",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="Floating", benchmark="1Y MCLR (RBL)", spread=0.05,
+             eff_rate=9.05, sanction_date=date(2025,2,28), maturity=date(2026,11,30),
+             rate_status="Confirmed", parent="Standalone"),
+        dict(sno=7,  lender="RBL Bank", facility="WCDL",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="TBD", benchmark="To be decided", spread=None,
+             eff_rate=9.05, sanction_date=date(2025,12,31), maturity=date(2026,11,30),
+             rate_status="Estimate (proxy: RBL CC)", parent="Sub-limit of LC"),
+        dict(sno=8,  lender="RBL Bank", facility="Loan Equivalent Risk (LER)",
+             category="Hedge", nature="Revolving", currency="INR",
+             sanc_inr=20, outstanding=20, util_pct=1.0,
+             rate_type="Fixed", benchmark="Bank treasury", spread=None,
+             eff_rate=0.0, sanction_date=date(2025,12,31), maturity=date(2026,11,30),
+             rate_status="N/A (notional)", parent="Main"),
+        dict(sno=9,  lender="RBL Bank", facility="Term Loan - Main Limit",
+             category="FB-Term", nature="Non-Revolving", currency="INR",
+             sanc_inr=200, outstanding=183.33, util_pct=1.0,
+             rate_type="Floating", benchmark="1Y MCLR (RBL)", spread=0.75,
+             eff_rate=9.75, sanction_date=date(2024,1,24), maturity=date(2029,1,24),
+             rate_status="Indicative", parent="Main"),
+        dict(sno=10, lender="RBL Bank", facility="SBLC for Buyer's Credit (GIFT City)",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=190, outstanding=190, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.50, sanction_date=date(2025,12,31), maturity=date(2026,11,30),
+             rate_status="Confirmed", parent="Main"),
+        dict(sno=11, lender="RBL Bank", facility="Capex LC",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=25, outstanding=25, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.50, sanction_date=date(2025,12,31), maturity=date(2026,11,30),
+             rate_status="Confirmed", parent="Main"),
+        dict(sno=12, lender="RBL Bank", facility="Overdraft backed by 100% FD (FDOD)",
+             category="FB-FDbacked", nature="Revolving", currency="INR",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="Floating", benchmark="FD rate", spread=0.25,
+             eff_rate=7.25, sanction_date=date(2024,1,24), maturity=date(2026,11,30),
+             rate_status="Estimate (FD+25bps)", parent="Main"),
+        dict(sno=13, lender="RBL Bank", facility="LC backed by 100% FD",
+             category="NFB-FDbacked", nature="Revolving", currency="INR",
+             sanc_inr=50, outstanding=50, util_pct=1.0,
+             rate_type="TBD", benchmark="To be decided", spread=None,
+             eff_rate=0.0, sanction_date=date(2024,1,24), maturity=date(2026,11,30),
+             rate_status="N/A (FD-backed nil)", parent="Sub-limit of FDOD"),
+        dict(sno=14, lender="RBL Bank", facility="Buyer's Credit GIFT City - WC",
+             category="FB-FCY", nature="Revolving", currency="USD",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="Floating", benchmark="Term SOFR (USD)", spread=None,
+             eff_rate=4.30, sanction_date=date(2025,3,13), maturity=date(2026,11,30),
+             rate_status="Estimate (SOFR floor)", parent="Main"),
+        dict(sno=15, lender="RBL Bank", facility="Buyer's Credit GIFT City - CAPEX",
+             category="FB-FCY", nature="Revolving", currency="USD",
+             sanc_inr=172, outstanding=172, util_pct=1.0,
+             rate_type="Floating", benchmark="Term SOFR (USD)", spread=None,
+             eff_rate=4.30, sanction_date=date(2025,3,27), maturity=date(2026,11,30),
+             rate_status="Estimate (SOFR floor)", parent="Main"),
+
+        # ===== YES Bank (6 facilities, ₹895.7 Cr) =====
+        dict(sno=16, lender="YES Bank", facility="Purchase Invoice Financing",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=100, outstanding=100, util_pct=1.0,
+             rate_type="TBD", benchmark="To be decided", spread=None,
+             eff_rate=9.07, sanction_date=date(2026,3,19), maturity=date(2026,4,30),
+             rate_status="Estimate (proxy: YBL CC)", parent="Main"),
+        dict(sno=17, lender="YES Bank", facility="Cash Credit",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=25, outstanding=25, util_pct=1.0,
+             rate_type="Floating", benchmark="3M MCLR (YBL)", spread=0.07,
+             eff_rate=9.07, sanction_date=date(2026,3,19), maturity=date(2027,3,19),
+             rate_status="Confirmed", parent="Main"),
+        dict(sno=18, lender="YES Bank", facility="Letter of Credit",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=200, outstanding=200, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.0, sanction_date=date(2026,3,19), maturity=date(2027,3,26),
+             rate_status="Rate Missing", parent="Main"),
+        dict(sno=19, lender="YES Bank", facility="Financial BG / SBLC",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=200, outstanding=200, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.50, sanction_date=date(2026,3,19), maturity=date(2027,3,26),
+             rate_status="Confirmed", parent="Sub-limit of LC"),
+        dict(sno=20, lender="YES Bank", facility="WCDL",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=50, outstanding=50, util_pct=1.0,
+             rate_type="TBD", benchmark="To be decided", spread=None,
+             eff_rate=9.07, sanction_date=date(2026,3,19), maturity=date(2027,3,19),
+             rate_status="Estimate (proxy: YBL CC)", parent="Sub-limit of LC"),
+        dict(sno=21, lender="YES Bank", facility="Term Loan (Refinance Canara)",
+             category="FB-Term", nature="Non-Revolving", currency="INR",
+             sanc_inr=320.7, outstanding=286.58, util_pct=1.0,
+             rate_type="Floating", benchmark="3M T-Bill", spread=2.52,
+             eff_rate=7.70, sanction_date=date(2024,12,16), maturity=date(2036,9,30),
+             rate_status="Confirmed", parent="Main"),
+
+        # ===== Bajaj Finance (1 facility, ₹150 Cr) =====
+        dict(sno=22, lender="Bajaj Finance", facility="Term Loan",
+             category="FB-Term", nature="Non-Revolving", currency="INR",
+             sanc_inr=150, outstanding=150, util_pct=1.0,
+             rate_type="Floating", benchmark="BFRR", spread=0.10,
+             eff_rate=8.60, sanction_date=date(2025,8,18), maturity=date(2033,8,18),
+             rate_status="Confirmed", parent="Main"),
+
+        # ===== ICICI Bank (6 facilities, ₹430 Cr / ₹200 Cr cap) =====
+        dict(sno=23, lender="ICICI Bank", facility="Cash Credit",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=50, outstanding=50, util_pct=1.0,
+             rate_type="Floating", benchmark="6M I-MCLR (ICICI)", spread=0.45,
+             eff_rate=8.75, sanction_date=date(2025,9,16), maturity=date(2026,9,3),
+             rate_status="Confirmed", parent="Main"),
+        dict(sno=24, lender="ICICI Bank", facility="WCDL",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=50, outstanding=50, util_pct=1.0,
+             rate_type="Floating", benchmark="Repo Rate", spread=0.75,
+             eff_rate=6.00, sanction_date=date(2025,11,11), maturity=date(2026,9,3),
+             rate_status="Estimate (Repo+75bps)", parent="Sub-limit of CC"),
+        dict(sno=25, lender="ICICI Bank", facility="Letter of Credit (Inland/Foreign)",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=150, outstanding=150, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.50, sanction_date=date(2025,9,16), maturity=date(2026,9,3),
+             rate_status="Confirmed", parent="Main"),
+        dict(sno=26, lender="ICICI Bank", facility="SBLC for Buyers' Credit",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=150, outstanding=150, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.50, sanction_date=date(2025,9,16), maturity=date(2026,9,3),
+             rate_status="Confirmed", parent="Sub-limit of LC"),
+        dict(sno=27, lender="ICICI Bank", facility="Bank Guarantee - Performance",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=25, outstanding=25, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.50, sanction_date=date(2025,9,16), maturity=date(2026,9,3),
+             rate_status="Confirmed", parent="Sub-limit of LC"),
+        dict(sno=28, lender="ICICI Bank", facility="Bank Guarantee - Financial",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=5, outstanding=5, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.60, sanction_date=date(2025,9,16), maturity=date(2026,9,3),
+             rate_status="Confirmed", parent="Sub-limit of LC"),
+
+        # ===== South Indian Bank (6 facilities, ₹453 Cr / ₹150 Cr cap) =====
+        dict(sno=29, lender="South Indian Bank", facility="CCOL (Cash Credit)",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=50, outstanding=50, util_pct=1.0,
+             rate_type="Floating", benchmark="12M MCLR (SIB)", spread=0.45,
+             eff_rate=10.20, sanction_date=date(2025,6,21), maturity=date(2026,6,21),
+             rate_status="Confirmed", parent="Sub-limit of LC"),
+        dict(sno=30, lender="South Indian Bank", facility="WCL / WCDL",
+             category="FB", nature="Revolving", currency="INR",
+             sanc_inr=50, outstanding=50, util_pct=1.0,
+             rate_type="TBD", benchmark="To be decided", spread=None,
+             eff_rate=10.20, sanction_date=date(2025,6,21), maturity=date(2026,6,21),
+             rate_status="Estimate (proxy: SIB CCOL)", parent="Sub-limit of CCOL"),
+        dict(sno=31, lender="South Indian Bank", facility="Inland / Import LC",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=150, outstanding=150, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.65, sanction_date=date(2025,6,21), maturity=date(2026,6,21),
+             rate_status="Confirmed", parent="Main"),
+        dict(sno=32, lender="South Indian Bank", facility="Capex LC",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=50, outstanding=50, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.75, sanction_date=date(2025,6,21), maturity=date(2026,6,21),
+             rate_status="Confirmed", parent="Main"),
+        dict(sno=33, lender="South Indian Bank", facility="SBLC",
+             category="NFB", nature="Revolving", currency="INR",
+             sanc_inr=150, outstanding=150, util_pct=1.0,
+             rate_type="Fixed", benchmark="Fixed commission", spread=None,
+             eff_rate=0.65, sanction_date=date(2025,6,21), maturity=date(2026,6,21),
+             rate_status="Confirmed", parent="Sub-limit of LC"),
+        dict(sno=34, lender="South Indian Bank", facility="Forward Contract Limit",
+             category="Hedge", nature="Revolving", currency="INR",
+             sanc_inr=3, outstanding=3, util_pct=1.0,
+             rate_type="Fixed", benchmark="N/A", spread=None,
+             eff_rate=0.0, sanction_date=date(2025,6,21), maturity=date(2026,6,21),
+             rate_status="N/A (notional)", parent="Main"),
+    ]
+
+
+# =============================================================================
+# COVENANT MASTER  (24 covenants across 5 lenders)
+# =============================================================================
+def get_covenant_master():
+    return [
+        dict(lender="RBL Bank", covenant="DSCR", op=">", threshold=1.25, freq="At all times"),
+        dict(lender="RBL Bank", covenant="Term Debt / EBITDA", op="<", threshold=2.5, freq="Ongoing"),
+        dict(lender="RBL Bank", covenant="TOL / TNW", op="<", threshold=3.0, freq="Ongoing"),
+        dict(lender="RBL Bank", covenant="External Rating (>=A-)", op="rating", threshold="A-", freq="Throughout tenor"),
+
+        dict(lender="YES Bank", covenant="DSCR", op=">", threshold=1.20, freq="Within 180D of FY-end"),
+        dict(lender="YES Bank", covenant="Total Debt / EBITDA (till FY27)", op="<", threshold=4.5, freq="Within 180D of FY-end"),
+        dict(lender="YES Bank", covenant="Total Debt / EBITDA (FY28+)", op="<", threshold=3.5, freq="Within 180D of FY-end"),
+        dict(lender="YES Bank", covenant="Total Debt / ATNW", op="<", threshold=2.0, freq="Within 180D of FY-end"),
+        dict(lender="YES Bank", covenant="FACR", op=">", threshold=1.33, freq="Within 180D of FY-end"),
+        dict(lender="YES Bank", covenant="External Rating (>=A-/A1)", op="rating", threshold="A-", freq="Throughout tenor"),
+
+        dict(lender="Bajaj Finance", covenant="Total Debt / EBITDA", op="<=", threshold=4.0, freq="FY26 onwards"),
+        dict(lender="Bajaj Finance", covenant="Total Debt / ATNW", op="<", threshold=2.0, freq="FY26 onwards"),
+        dict(lender="Bajaj Finance", covenant="ICR", op=">=", threshold=3.5, freq="FY26 onwards"),
+        dict(lender="Bajaj Finance", covenant="DSCR", op=">", threshold=1.20, freq="FY26 onwards"),
+        dict(lender="Bajaj Finance", covenant="FACR", op=">", threshold=1.25, freq="Throughout tenor"),
+
+        dict(lender="ICICI Bank", covenant="DSCR", op=">", threshold=1.25, freq="Ongoing"),
+        dict(lender="ICICI Bank", covenant="Total Debt / EBITDA", op="<", threshold=3.0, freq="Ongoing"),
+        dict(lender="ICICI Bank", covenant="TOL / ATNW (till FY26)", op="<", threshold=2.5, freq="Ongoing"),
+        dict(lender="ICICI Bank", covenant="TOL / ATNW (till FY27)", op="<", threshold=2.1, freq="Ongoing"),
+        dict(lender="ICICI Bank", covenant="TOL / ATNW (FY28+)", op="<", threshold=2.0, freq="Ongoing"),
+
+        dict(lender="South Indian Bank", covenant="TOL / TNW", op="<=", threshold=3.0, freq="Annual"),
+        dict(lender="South Indian Bank", covenant="Debt Equity Ratio", op="<=", threshold=2.0, freq="Annual"),
+        dict(lender="South Indian Bank", covenant="Current Ratio", op=">", threshold=1.33, freq="Annual"),
+        dict(lender="South Indian Bank", covenant="ICR", op=">", threshold=3.0, freq="Annual"),
+    ]
+
+
+# =============================================================================
+# TERM LOAN SCHEDULE  (3 amortising TLs — quarterly EQI)
+# =============================================================================
+def get_term_loan_schedule():
+    return [
+        dict(lender="RBL Bank", facility="Term Loan - Main Limit",
+             sanction=200, drawdown=date(2024,1,24), moratorium_m=24,
+             rep_start=date(2026,1,24), maturity=date(2029,1,24),
+             num_inst=12, qtr_inst=200/12, rate=9.75,
+             principal_repaid=16.67, principal_outstanding=183.33),
+        dict(lender="YES Bank", facility="Term Loan (Refinance Canara)",
+             sanction=320.7, drawdown=date(2024,12,16), moratorium_m=0,
+             rep_start=date(2025,3,31), maturity=date(2036,9,30),
+             num_inst=47, qtr_inst=320.7/47, rate=7.70,
+             principal_repaid=34.12, principal_outstanding=286.58),
+        dict(lender="Bajaj Finance", facility="Term Loan",
+             sanction=150, drawdown=date(2025,8,18), moratorium_m=12,
+             rep_start=date(2026,8,18), maturity=date(2033,8,18),
+             num_inst=28, qtr_inst=150/28, rate=8.60,
+             principal_repaid=0, principal_outstanding=150),
+    ]
