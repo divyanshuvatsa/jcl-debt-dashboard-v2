@@ -66,6 +66,7 @@ PLOTLY_TEMPLATE = {
 CUSTOM_CSS = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
 /* === GLOBAL === */
 .stApp {{
@@ -419,10 +420,48 @@ h1, h2, h3, h4, h5, h6 {{
     position: relative;
 }}
 
-/* === HIDE STREAMLIT BRANDING === */
+/* === HIDE SIDEBAR COLLAPSE BUTTON (keyboard_double icon) === */
+[data-testid="stSidebarHeader"] {display: none !important;}
+[data-testid="stSidebarCollapseButton"] {display: none !important;}
+[data-testid="collapsedControl"] {display: none !important;}
+section[data-testid="stSidebar"] > div > div > div > button:first-child {display: none !important;}
+
+/* === HIDE STREAMLIT BRANDING & BROKEN ICONS === */
 #MainMenu {{visibility: hidden;}}
 footer {{visibility: hidden;}}
 header {{visibility: hidden;}}
+
+/* === HIDE BROKEN MATERIAL ICON ELEMENTS === */
+/* Sidebar collapse/toggle button that renders as 'keyboard_double' */
+[data-testid="collapsedControl"] {{display: none !important;}}
+[data-testid="stSidebarCollapseButton"] {{display: none !important;}}
+[data-testid="stSidebarCollapsedControl"] {{display: none !important;}}
+section[data-testid="stSidebar"] > div:first-child > div:first-child > button {{
+    display: none !important;
+}}
+
+/* Hide ALL buttons in sidebar that only contain icon spans */
+[data-testid="stSidebar"] button[kind="icon"] {{display: none !important;}}
+
+/* Material icons font — force load so icons don't render as text */
+@font-face {{
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    src: url(https://fonts.gstatic.com/s/materialicons/v140/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2) format('woff2');
+}}
+.material-icons {{
+    font-family: 'Material Icons' !important;
+    font-feature-settings: 'liga' !important;
+    -webkit-font-feature-settings: 'liga' !important;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    word-wrap: normal;
+    direction: ltr;
+}}
 </style>
 """
 

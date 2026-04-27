@@ -38,84 +38,37 @@ class Dashboard:
     # SIDEBAR
     # =========================================================================
     def render_sidebar(self) -> dict:
-        st.sidebar.markdown("### 📊 JCL TERMINAL")
-        st.sidebar.caption("Bloomberg debt monitor v2.0")
-
-        # Data source
-        src = self.raw.get("_source", "unknown")
-        if src == "excel":
-            st.sidebar.success("Data: Excel ✓")
-        else:
-            st.sidebar.info("Data: Hardcoded fallback")
-
-        st.sidebar.divider()
-
-        # === Excel upload ===
-        with st.sidebar.expander("📁 Upload Excel"):
-            uploaded = st.file_uploader("JCL_Debt_Model.xlsx", type=["xlsx"])
-            if uploaded:
-                from data.excel_loader import load_from_excel
-                new_data = load_from_excel(uploaded)
-                if new_data:
-                    st.session_state["uploaded_data"] = new_data
-                    st.success("Loaded!")
-                else:
-                    st.error("Could not parse.")
-
-        st.sidebar.divider()
-
-        # === Snapshot date ===
-        as_of = st.sidebar.date_input("As-of Date", value=date(2026, 4, 27))
-
-        # === FX rate ===
+        st.sidebar.markdown("## JCL DEBT TERMINAL")
+        st.sidebar.markdown("Bloomberg debt monitor v2.0")
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("**As-of Date**")
+        as_of = st.sidebar.date_input("date", value=date(2026, 4, 27), label_visibility="collapsed")
+        st.sidebar.markdown("---")
         fx_data = live_data.get_fx()
-        st.sidebar.caption(f"USD/INR: {fx_data['rate']:.2f} ({fx_data['source']})")
-        fx_override = st.sidebar.number_input(
-            "Override FX", value=float(fx_data["rate"]),
-            min_value=70.0, max_value=120.0, step=0.5,
-        )
-
-        # === Basis ===
-        basis = st.sidebar.radio("Financial Basis", options=["FY26E", "FY24A"])
-
-        st.sidebar.divider()
-
-        # === Quick scenarios (vertical stack — no columns) ===
+        st.sidebar.markdown(f"**USD/INR:** {fx_data['rate']:.2f}")
+        fx_override = st.sidebar.number_input("FX override", value=float(fx_data["rate"]), min_value=70.0, max_value=120.0, step=0.5, label_visibility="collapsed")
+        st.sidebar.markdown("---")
+        basis = st.sidebar.radio("**Financial Basis**", options=["FY26E", "FY24A"])
+        st.sidebar.markdown("---")
         st.sidebar.markdown("**Quick Scenarios**")
-        if st.sidebar.button("📈 +100 bps", use_container_width=True, key="qs1"):
+        if st.sidebar.button("+100 bps Rate Shock", use_container_width=True, key="qs1"):
             st.session_state["scenario"] = ScenarioInputs(rate_shock_bps=100)
-        if st.sidebar.button("⛈ Severe", use_container_width=True, key="qs2"):
-            st.session_state["scenario"] = ScenarioInputs(
-                rate_shock_bps=200, ebitda_change_pct=-0.30, debt_change_pct=0.25
-            )
-        if st.sidebar.button("📉 EBITDA -20%", use_container_width=True, key="qs3"):
+        if st.sidebar.button("Severe Stress", use_container_width=True, key="qs2"):
+            st.session_state["scenario"] = ScenarioInputs(rate_shock_bps=200, ebitda_change_pct=-0.30, debt_change_pct=0.25)
+        if st.sidebar.button("EBITDA -20%", use_container_width=True, key="qs3"):
             st.session_state["scenario"] = ScenarioInputs(ebitda_change_pct=-0.20)
-        if st.sidebar.button("🔄 Reset", use_container_width=True, key="qs4"):
+        if st.sidebar.button("Reset to Base Case", use_container_width=True, key="qs4"):
             st.session_state["scenario"] = ScenarioInputs()
-
-        st.sidebar.divider()
-
-        # === AI status ===
+        st.sidebar.markdown("---")
         api_key = self._get_api_key()
         if api_key and ai_assistant.anthropic is not None:
-            st.sidebar.success("🤖 AI: Connected")
+            st.sidebar.success("AI: Connected")
         else:
-            st.sidebar.warning("🤖 AI: Key missing")
-
-        with st.sidebar.expander("ℹ️ Legend"):
-            st.markdown(
-                "🟢 Green = Compliant  \n"
-                "🟡 Amber = Near breach  \n"
-                "🔴 Red = Breached  \n"
-                "All ₹ in Crores"
-            )
-
-        return {
-            "as_of_date": as_of,
-            "fx_rate":    fx_override,
-            "basis":      basis,
-            "api_key":    api_key,
-        }
+            st.sidebar.warning("AI: Add ANTHROPIC_API_KEY in Secrets")
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("Green = OK | Amber = Watch | Red = Breach")
+        st.sidebar.markdown("All figures in Rs. Crores")
+        return {"as_of_date": as_of, "fx_rate": fx_override, "basis": basis, "api_key": api_key}
 
     def _get_api_key(self) -> str | None:
         try:
